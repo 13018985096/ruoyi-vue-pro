@@ -1,29 +1,28 @@
 package cn.iocoder.yudao.framework.swagger.config;
 
+import cn.iocoder.yudao.framework.swagger.core.SpringFoxHandlerProviderBeanPostProcessor;
 import com.github.xiaoymin.knife4j.spring.annotations.EnableKnife4j;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import springfox.documentation.builders.ApiInfoBuilder;
+import springfox.documentation.builders.ParameterBuilder;
 import springfox.documentation.builders.PathSelectors;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.ApiKey;
-import springfox.documentation.service.AuthorizationScope;
-import springfox.documentation.service.Contact;
-import springfox.documentation.service.SecurityReference;
-import springfox.documentation.service.SecurityScheme;
+import springfox.documentation.schema.ModelRef;
+import springfox.documentation.service.*;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spi.service.contexts.SecurityContext;
 import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
+import springfox.documentation.swagger2.annotations.EnableSwagger2WebMvc;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.HEADER_TENANT_ID;
 import static springfox.documentation.builders.RequestHandlerSelectors.basePackage;
 
 /**
@@ -31,36 +30,40 @@ import static springfox.documentation.builders.RequestHandlerSelectors.basePacka
  *
  * @author 芋道源码
  */
-@Configuration
-@EnableSwagger2
+@AutoConfiguration
+@EnableSwagger2WebMvc
 @EnableKnife4j
 @ConditionalOnClass({Docket.class, ApiInfoBuilder.class})
-@ConditionalOnProperty(prefix = "yudao.swagger", value = "enable", matchIfMissing = true)
 // 允许使用 swagger.enable=false 禁用 Swagger
+@ConditionalOnProperty(prefix = "yudao.swagger", value = "enable", matchIfMissing = true)
 @EnableConfigurationProperties(SwaggerProperties.class)
 public class YudaoSwaggerAutoConfiguration {
 
     @Bean
-    @ConditionalOnMissingBean
-    public SwaggerProperties swaggerProperties() {
-        return new SwaggerProperties();
+    public SpringFoxHandlerProviderBeanPostProcessor springFoxHandlerProviderBeanPostProcessor() {
+        return new SpringFoxHandlerProviderBeanPostProcessor();
     }
 
     @Bean
-    public Docket createRestApi() {
-        SwaggerProperties properties = swaggerProperties();
+    public Docket createRestApi(SwaggerProperties properties) {
         // 创建 Docket 对象
         return new Docket(DocumentationType.SWAGGER_2)
-                // 用来创建该 API 的基本信息，展示在文档的页面中（自定义展示的信息）
+                // ① 用来创建该 API 的基本信息，展示在文档的页面中（自定义展示的信息）
                 .apiInfo(apiInfo(properties))
-                // 设置扫描指定 package 包下的
+                // ② 设置扫描指定 package 包下的
                 .select()
                 .apis(basePackage(properties.getBasePackage()))
+//                .apis(basePackage("cn.iocoder.yudao.module.system")) // 可用于 swagger 无法展示时使用
                 .paths(PathSelectors.any())
                 .build()
+                // ③ 安全上下文（认证）
                 .securitySchemes(securitySchemes())
-                .securityContexts(securityContexts());
+                .securityContexts(securityContexts())
+                // ④ 全局参数（多租户 header）
+                .globalOperationParameters(globalRequestParameters());
     }
+
+    // ========== apiInfo ==========
 
     /**
      * API 摘要信息
@@ -73,6 +76,8 @@ public class YudaoSwaggerAutoConfiguration {
                 .version(properties.getVersion())
                 .build();
     }
+
+    // ========== securitySchemes ==========
 
     /**
      * 安全模式，这里配置通过请求头 Authorization 传递 token 参数
@@ -90,6 +95,7 @@ public class YudaoSwaggerAutoConfiguration {
     private static List<SecurityContext> securityContexts() {
         return Collections.singletonList(SecurityContext.builder()
                 .securityReferences(securityReferences())
+                // 通过 PathSelectors.regex("^(?!auth).*$")，排除包含 "auth" 的接口不需要使用securitySchemes
                 .forPaths(PathSelectors.regex("^(?!auth).*$"))
                 .build());
     }
@@ -100,6 +106,21 @@ public class YudaoSwaggerAutoConfiguration {
 
     private static AuthorizationScope[] authorizationScopes() {
         return new AuthorizationScope[]{new AuthorizationScope("global", "accessEverything")};
+    }
+
+    // ========== globalRequestParameters ==========
+
+    private static List<Parameter> globalRequestParameters() {
+        List<Parameter> tenantParameter = new ArrayList<>();
+        tenantParameter.add(new ParameterBuilder()
+                .name(HEADER_TENANT_ID)
+                .description("租户编号")
+                .modelRef(new ModelRef("long"))
+                .defaultValue("1")
+                .parameterType("header")
+                .required(true)
+                .build());
+        return tenantParameter;
     }
 
 }

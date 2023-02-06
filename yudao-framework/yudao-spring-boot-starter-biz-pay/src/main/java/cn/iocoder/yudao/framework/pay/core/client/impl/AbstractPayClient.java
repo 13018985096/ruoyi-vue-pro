@@ -1,12 +1,15 @@
 package cn.iocoder.yudao.framework.pay.core.client.impl;
 
-import cn.hutool.extra.validation.ValidationUtil;
 import cn.iocoder.yudao.framework.pay.core.client.AbstractPayCodeMapping;
 import cn.iocoder.yudao.framework.pay.core.client.PayClient;
 import cn.iocoder.yudao.framework.pay.core.client.PayClientConfig;
 import cn.iocoder.yudao.framework.pay.core.client.PayCommonResult;
 import cn.iocoder.yudao.framework.pay.core.client.dto.PayOrderUnifiedReqDTO;
+import cn.iocoder.yudao.framework.pay.core.client.dto.PayRefundUnifiedReqDTO;
+import cn.iocoder.yudao.framework.pay.core.client.dto.PayRefundUnifiedRespDTO;
 import lombok.extern.slf4j.Slf4j;
+
+import javax.validation.Validation;
 
 import static cn.iocoder.yudao.framework.common.util.json.JsonUtils.toJsonString;
 
@@ -34,10 +37,6 @@ public abstract class AbstractPayClient<Config extends PayClientConfig> implemen
      * 支付配置
      */
     protected Config config;
-
-    protected Double calculateAmount(Long amount) {
-        return amount / 100.0;
-    }
 
     public AbstractPayClient(Long channelId, String channelCode, Config config, AbstractPayCodeMapping codeMapping) {
         this.channelId = channelId;
@@ -70,6 +69,10 @@ public abstract class AbstractPayClient<Config extends PayClientConfig> implemen
         this.init();
     }
 
+    protected Double calculateAmount(Integer amount) {
+        return amount / 100.0;
+    }
+
     @Override
     public Long getId() {
         return channelId;
@@ -77,7 +80,7 @@ public abstract class AbstractPayClient<Config extends PayClientConfig> implemen
 
     @Override
     public final PayCommonResult<?> unifiedOrder(PayOrderUnifiedReqDTO reqDTO) {
-        ValidationUtil.validate(reqDTO);
+        Validation.buildDefaultValidatorFactory().getValidator().validate(reqDTO);
         // 执行短信发送
         PayCommonResult<?> result;
         try {
@@ -93,5 +96,20 @@ public abstract class AbstractPayClient<Config extends PayClientConfig> implemen
 
     protected abstract PayCommonResult<?> doUnifiedOrder(PayOrderUnifiedReqDTO reqDTO)
             throws Throwable;
+
+    @Override
+    public PayCommonResult<PayRefundUnifiedRespDTO> unifiedRefund(PayRefundUnifiedReqDTO reqDTO) {
+        PayCommonResult<PayRefundUnifiedRespDTO> resp;
+        try {
+            resp = doUnifiedRefund(reqDTO);
+        }  catch (Throwable ex) {
+            // 记录异常日志
+            log.error("[unifiedRefund][request({}) 发起退款失败]", toJsonString(reqDTO), ex);
+            resp = PayCommonResult.error(ex);
+        }
+        return resp;
+    }
+
+    protected abstract PayCommonResult<PayRefundUnifiedRespDTO> doUnifiedRefund(PayRefundUnifiedReqDTO reqDTO) throws Throwable;
 
 }

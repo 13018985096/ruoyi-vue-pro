@@ -11,7 +11,7 @@
     <artifactId>yudao-spring-boot-starter-biz-operatelog</artifactId>
     <packaging>jar</packaging>
 
-    <name>${artifactId}</name>
+    <name>${project.artifactId}</name>
     <description>操作日志</description>
     <url>https://github.com/YunaiV/ruoyi-vue-pro</url>
 
@@ -32,6 +32,13 @@
             <groupId>cn.iocoder.boot</groupId>
             <artifactId>yudao-spring-boot-starter-web</artifactId>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- 业务组件 -->
+        <dependency>
+            <groupId>cn.iocoder.boot</groupId>
+            <artifactId>yudao-module-system-api</artifactId> <!-- 需要使用它，进行操作日志的记录 -->
+            <version>${revision}</version>
         </dependency>
 
         <!-- 工具类相关 -->

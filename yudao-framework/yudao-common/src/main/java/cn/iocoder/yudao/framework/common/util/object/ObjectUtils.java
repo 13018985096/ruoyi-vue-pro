@@ -4,6 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.ReflectUtil;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.function.Consumer;
 
 /**
@@ -44,6 +45,7 @@ public class ObjectUtils {
         return obj1.compareTo(obj2) > 0 ? obj1 : obj2;
     }
 
+    @SafeVarargs
     public static <T> T defaultIfNull(T... array) {
         for (T item : array) {
             if (item != null) {
@@ -51,6 +53,11 @@ public class ObjectUtils {
             }
         }
         return null;
+    }
+
+    @SafeVarargs
+    public static <T> boolean equalsAny(T obj, T... array) {
+        return Arrays.asList(array).contains(obj);
     }
 
 }

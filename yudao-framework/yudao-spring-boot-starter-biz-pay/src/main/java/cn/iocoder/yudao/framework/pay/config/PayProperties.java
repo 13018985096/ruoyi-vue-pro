@@ -6,8 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import java.time.Duration;
 
 @ConfigurationProperties(prefix = "yudao.pay")
 @Validated
@@ -15,18 +13,23 @@ import java.time.Duration;
 public class PayProperties {
 
     /**
-     * 支付回调地址
+     * 回调地址
+     *
+     * 实际上，对应的 PayNotifyController 的 notifyCallback 方法的 URL
+     *
      * 注意，支付渠道统一回调到 payNotifyUrl 地址，由支付模块统一处理；然后，自己的支付模块，在回调 PayAppDO.payNotifyUrl 地址
      */
-    @NotEmpty(message = "支付回调地址不能为空")
-    @URL(message = "支付回调地址的格式必须是 URL")
-    private String payNotifyUrl;
+    @NotEmpty(message = "回调地址不能为空")
+    @URL(message = "回调地址的格式必须是 URL")
+    private String callbackUrl;
+
     /**
-     * 退款回调地址
-     * 注意点，同 {@link #payNotifyUrl} 属性
+     * 回跳地址
+     *
+     * 实际上，对应的 PayNotifyController 的 returnCallback 方法的 URL
      */
-    @NotNull(message = "短信发送频率不能为空")
-    @URL(message = "退款回调地址的格式必须是 URL")
-    private String refundNotifyUrl;
+    @URL(message = "回跳地址的格式必须是 URL")
+    @NotEmpty(message = "回跳地址不能为空")
+    private String returnUrl;
 
 }

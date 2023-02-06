@@ -11,7 +11,7 @@
     <artifactId>yudao-spring-boot-starter-monitor</artifactId>
     <packaging>jar</packaging>
 
-    <name>${artifactId}</name>
+    <name>${project.artifactId}</name>
     <description>服务监控，提供链路追踪、日志服务、指标收集等等功能</description>
     <url>https://github.com/YunaiV/ruoyi-vue-pro</url>
 
@@ -56,6 +56,12 @@
         <dependency>
             <groupId>org.apache.skywalking</groupId>
             <artifactId>apm-toolkit-opentracing</artifactId>
+        </dependency>
+
+        <!-- Micrometer 对 Prometheus 的支持 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
         <dependency>

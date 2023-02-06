@@ -1,8 +1,7 @@
 package cn.iocoder.yudao.framework.redis.config;
 
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
@@ -10,8 +9,7 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 /**
  * Redis 配置类
  */
-@Configuration
-@Slf4j
+@AutoConfiguration
 public class YudaoRedisAutoConfiguration {
 
     /**

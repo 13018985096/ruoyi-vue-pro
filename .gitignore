@@ -42,3 +42,10 @@ nbdist/
 !*/build/*.java
 !*/build/*.html
 !*/build/*.xml
+
+### JRebel ###
+rebel.xml
+
+application-my.yaml
+
+/yudao-ui-app/unpackage/

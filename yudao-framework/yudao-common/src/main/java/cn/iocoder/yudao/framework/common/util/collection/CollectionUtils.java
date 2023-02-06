@@ -2,6 +2,7 @@ package cn.iocoder.yudao.framework.common.util.collection;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
+import com.google.common.collect.ImmutableMap;
 
 import java.util.*;
 import java.util.function.BinaryOperator;
@@ -50,14 +51,28 @@ public class CollectionUtils {
         if (CollUtil.isEmpty(from)) {
             return new ArrayList<>();
         }
-        return from.stream().map(func).collect(Collectors.toList());
+        return from.stream().map(func).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    public static <T, U> List<U> convertList(Collection<T> from, Function<T, U> func, Predicate<T> filter) {
+        if (CollUtil.isEmpty(from)) {
+            return new ArrayList<>();
+        }
+        return from.stream().filter(filter).map(func).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public static <T, U> Set<U> convertSet(Collection<T> from, Function<T, U> func) {
         if (CollUtil.isEmpty(from)) {
             return new HashSet<>();
         }
-        return from.stream().map(func).collect(Collectors.toSet());
+        return from.stream().map(func).filter(Objects::nonNull).collect(Collectors.toSet());
+    }
+
+    public static <T, U> Set<U> convertSet(Collection<T> from, Function<T, U> func, Predicate<T> filter) {
+        if (CollUtil.isEmpty(from)) {
+            return new HashSet<>();
+        }
+        return from.stream().filter(filter).map(func).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
     public static <T, K> Map<K, T> convertMap(Collection<T> from, Function<T, K> keyFunc) {
@@ -114,7 +129,7 @@ public class CollectionUtils {
             return new HashMap<>();
         }
         return from.stream()
-                   .collect(Collectors.groupingBy(keyFunc, Collectors.mapping(valueFunc, Collectors.toList())));
+                .collect(Collectors.groupingBy(keyFunc, Collectors.mapping(valueFunc, Collectors.toList())));
     }
 
     // 暂时没想好名字，先以 2 结尾噶
@@ -123,6 +138,15 @@ public class CollectionUtils {
             return new HashMap<>();
         }
         return from.stream().collect(Collectors.groupingBy(keyFunc, Collectors.mapping(valueFunc, Collectors.toSet())));
+    }
+
+    public static <T, K> Map<K, T> convertImmutableMap(Collection<T> from, Function<T, K> keyFunc) {
+        if (CollUtil.isEmpty(from)) {
+            return Collections.emptyMap();
+        }
+        ImmutableMap.Builder<K, T> builder = ImmutableMap.builder();
+        from.forEach(item -> builder.put(keyFunc.apply(item), item));
+        return builder.build();
     }
 
     public static boolean containsAny(Collection<?> source, Collection<?> candidates) {
@@ -140,11 +164,41 @@ public class CollectionUtils {
         return from.stream().filter(predicate).findFirst().orElse(null);
     }
 
+    public static <T, V extends Comparable<? super V>> V getMaxValue(List<T> from, Function<T, V> valueFunc) {
+        if (CollUtil.isEmpty(from)) {
+            return null;
+        }
+        assert from.size() > 0; // 断言，避免告警
+        T t = from.stream().max(Comparator.comparing(valueFunc)).get();
+        return valueFunc.apply(t);
+    }
+
+    public static <T, V extends Comparable<? super V>> V getMinValue(List<T> from, Function<T, V> valueFunc) {
+        if (CollUtil.isEmpty(from)) {
+            return null;
+        }
+        assert from.size() > 0; // 断言，避免告警
+        T t = from.stream().min(Comparator.comparing(valueFunc)).get();
+        return valueFunc.apply(t);
+    }
+
+    public static <T, V extends Comparable<? super V>> V getSumValue(List<T> from, Function<T, V> valueFunc, BinaryOperator<V> accumulator) {
+        if (CollUtil.isEmpty(from)) {
+            return null;
+        }
+        assert from.size() > 0; // 断言，避免告警
+        return from.stream().map(valueFunc).reduce(accumulator).get();
+    }
+
     public static <T> void addIfNotNull(Collection<T> coll, T item) {
         if (item == null) {
             return;
         }
         coll.add(item);
+    }
+
+    public static <T> Collection<T> singleton(T deptId) {
+        return deptId == null ? Collections.emptyList() : Collections.singleton(deptId);
     }
 
 }
